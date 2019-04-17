@@ -1,0 +1,18 @@
+
+<link rel="stylesheet" type="text/css" href="/static/loginStyle.css">
+<link rel="stylesheet" type="text/css" href="/static/w3.css">
+
+{% block body %}
+
+<div class="w3-container w3-teal">
+	<h2>Login</h2>
+</div>
+<form action="/api/login" method="POST" class="w3-container">
+	<label class="w3-text-teal" for="uname">Username:</label>
+	<input type="text" name="uname" class="w3-input w3-border" required>
+	<label class="w3-text-teal" for="pass">Password:</label>
+	<input type="password" name="pass" class="w3-input w3-border" required>
+	<input type="submit" value="Submit" class="w3-btn w3-blue-grey">
+</form>
+
+{% endblock %}
