@@ -1,0 +1,4 @@
+include rayweb/schema.sql
+graft rayweb/static
+graft rayweb/templates
+global-exclude *.pyc
