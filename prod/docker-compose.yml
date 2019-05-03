@@ -9,15 +9,18 @@ services:
                         - ./site.conf:/etc/nginx/nginx.conf
                 networks:
                         - webapp
+                depends_on:
+                        - python
 
         python:
-                image: python:3.7-stretch
+                tty: true
+                volumes:
+                        - ./:/rayweb
+                image: python:latest
                 build:
                         context: .
                 networks:
                         - webapp
-                depends-on:
-                        - web
 
-        networks:
-                webapp:
+networks:
+        webapp:

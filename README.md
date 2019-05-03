@@ -4,7 +4,7 @@ This simple WebApplication originated from the offical Flask Tutorial and was tr
 
 ## Installation
 
-To install this clone this repository and go into the `prod/` folder. Then simply run:
+To install, clone this repository and go into the `prod/` folder. Then simply run:
 
 ```text
 docker-compose up
