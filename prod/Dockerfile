@@ -1,7 +1,9 @@
 FROM python:latest
 WORKDIR /rayweb
 COPY . /rayweb
-RUN pip3 install wheel
-RUN pip3 install rayweb-1.0.0-py3-none-any.whl
+RUN pip install flup
+RUN pip install rayweb-1.0.0-py3-none-any.whl
+ENV FlASK_APP rayweb
+RUN flask init-db
 EXPOSE 9000
-CMD ["bash", "rayweb.fcgi"]
+CMD ["python", "rayweb.fcgi"]
