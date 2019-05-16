@@ -1,7 +1,9 @@
 import functools
+import datetime
+import jwt
 
 from flask import (
-	Blueprint, flash, g, redirect, render_template, request, session, url_for
+	Blueprint, flash, g, redirect, render_template, request, url_for, make_response, current_app
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -57,9 +59,24 @@ def login():
 			error = 'Incorrect password.'
 
 		if error is None:
-			session.clear()
-			session['user_id'] = user['id']
-			return redirect(url_for('index'))
+			try:
+				payload = {
+					'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=5),
+					'iat': datetime.datetime.utcnow(),
+					'sub': user['id']
+				}
+
+				token = jwt.encode(
+					payload,
+					current_app.config.get('SECRET_KEY'),
+					algorithm = 'HS256'
+				)
+			except Exception as e:
+				error = e
+			else:
+				response = make_response(redirect(url_for('index')))
+				response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
+				return response
 
 		flash(error)
 
@@ -67,20 +84,33 @@ def login():
 
 @bp.before_app_request
 def load_logged_in_user():
-	user_id = session.get('user_id')
+	try:
+		authToken = request.cookies['token']
+		
+		try:
+			payload = jwt.decode(authToken, current_app.config.get('SECRET_KEY'))
+		except jwt.ExpiredSignatureError:
+			g.user = None
+			pass
+		except jwt.InvalidTokenError:
+			g.user = None
+			pass
+		else:
+			g.user = get_db().execute(
+				'SELECT * FROM user WHERE id = ?', (payload['sub'],)
+			).fetchone()
 
-	if user_id is None:
+	except KeyError:
 		g.user = None
-	else:
-		g.user = get_db().execute(
-			'SELECT * FROM user WHERE id = ?', (user_id,)
-		).fetchone()
 
 
 @bp.route('/logout')
 def logout():
-	session.clear()
-	return redirect(url_for('index'))
+	exp = datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5)
+	conv = exp.strftime('%a, %d %b %Y %H:%M:%S GMT')
+	response = make_response(redirect(url_for('index')))
+	response.headers['Set-Cookie'] = 'token=; path=/; expires=' + conv
+	return response
 
 
 def login_required(view):
