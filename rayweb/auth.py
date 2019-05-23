@@ -59,24 +59,21 @@ def login():
 			error = 'Incorrect password.'
 
 		if error is None:
-			try:
-				payload = {
-					'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=5),
-					'iat': datetime.datetime.utcnow(),
-					'sub': user['id']
-				}
+			payload = {
+				'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=5),
+				'iat': datetime.datetime.utcnow(),
+				'sub': user['id']
+			}
 
-				token = jwt.encode(
-					payload,
-					current_app.config.get('SECRET_KEY'),
-					algorithm = 'HS256'
-				)
-			except Exception as e:
-				error = e
-			else:
-				response = make_response(redirect(url_for('index')))
-				response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
-				return response
+			encToken = jwt.encode(
+				payload,
+				current_app.config.get('SECRET_KEY'),
+				algorithm = 'HS256'
+			)
+			token = encToken.decode()
+			response = make_response(redirect(url_for('index')))
+			response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
+			return response
 
 		flash(error)
 
@@ -84,23 +81,18 @@ def login():
 
 @bp.before_app_request
 def load_logged_in_user():
-	try:
+	if 'token' in request.cookies:
 		authToken = request.cookies['token']
 		
 		try:
 			payload = jwt.decode(authToken, current_app.config.get('SECRET_KEY'))
-		except jwt.ExpiredSignatureError:
+		except (jwt.exceptions.ExpiredSignatureError,jwt.exceptions.InvalidTokenError):
 			g.user = None
-			pass
-		except jwt.InvalidTokenError:
-			g.user = None
-			pass
 		else:
 			g.user = get_db().execute(
 				'SELECT * FROM user WHERE id = ?', (payload['sub'],)
 			).fetchone()
-
-	except KeyError:
+	else:
 		g.user = None
 
 
@@ -109,7 +101,7 @@ def logout():
 	exp = datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5)
 	conv = exp.strftime('%a, %d %b %Y %H:%M:%S GMT')
 	response = make_response(redirect(url_for('index')))
-	response.headers['Set-Cookie'] = 'token=; path=/; expires=' + conv
+	response.headers['Set-Cookie'] = 'token=expired; path=/; expires=' + conv
 	return response
 
 

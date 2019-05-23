@@ -1,5 +1,6 @@
 import pytest
-from flask import g,session
+
+from flask import g
 from rayweb.db import get_db
 
 def test_register(client, app):
@@ -35,7 +36,6 @@ def test_login(client, auth):
 
 	with client:
 		client.get('/')
-		assert session['user_id'] == 1
 		assert g.user['username'] == 'test'
 
 
@@ -47,10 +47,19 @@ def test_login_validate_input(auth, username, password, message):
 	response = auth.login(username, password)
 	assert message in response.data
 
+# Currently does not work as expected
+#@pytest.mark.parametrize(('token'),(
+#	('token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImlhdCI6MTU1ODYwNTE1MSwiZXhwIjoxNTU4NjA1NDUxfQ.ThFa6Cep0ZdMVxfobabt77ji_xqSvmH06ozwDSSH7vA'),
+#	('token=test'),
+#))
+#def test_load_logged_in(client,token):
+#	with client:
+#		client.get('/',headers={'Cookie':token})
+#		assert g.user == None
 
 def test_logout(client, auth):
 	auth.login()
 
 	with client:
-		auth.logout()
-		assert 'user_id' not in session
+		response = auth.logout()
+		assert 'token=expired' in response.headers['Set-Cookie']
