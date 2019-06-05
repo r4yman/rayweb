@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Profile{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <ul>
+        {% for key,value in entity.items() %}
+            <li>
+                <p>{{ key }}: </p><p>{{ value }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

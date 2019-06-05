@@ -1,10 +1,19 @@
 DROP TABLE IF EXISTS user;
+DROP TABLE IF EXISTS admins;
 DROP TABLE IF EXISTS post;
 
 CREATE TABLE user (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	username TEXT UNIQUE NOT NULL,
-	password TEXT NOT NULL
+	password TEXT NOT NULL,
+	token TEXT
+);
+
+CREATE TABLE admins (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	username TEXT UNIQUE NOT NULL,
+	password TEXT NOT NULL,
+	token TEXT
 );
 
 CREATE TABLE post (
@@ -15,3 +24,7 @@ CREATE TABLE post (
 	body TEXT NOT NULL,
 	FOREIGN KEY (author_id) REFERENCES user (id)
 );
+
+INSERT INTO admins (username, password) VALUES (
+	'admin', 'pbkdf2:sha256:150000$GKr6WUfi$2db1a7e3fa645138a106039a22f363c5525e37aa85022bc3753d02051fe8d8a6'
+)

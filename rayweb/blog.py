@@ -19,6 +19,16 @@ def index():
 	).fetchall()
 	return render_template('blog/index.html', posts=posts)
 
+@bp.route('/profile/<int:id>', methods=('GET',))
+@login_required
+def profile(id):
+	db = get_db()
+	user = db.execute(
+		'SELECT * FROM user WHERE id = ?', (id,)
+	).fetchone()
+	entity = dict(user)
+	return render_template('blog/profile.html', entity=entity)
+
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
@@ -90,7 +100,7 @@ def update(id):
 	return render_template('blog/update.html', post=post)
 
 
-@bp.route('/<int:id>/delete', methods=('POST',))
+@bp.route('/<int:id>/delete', methods=('GET','POST'))
 @login_required
 def delete(id):
 	get_post(id)

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Control Panel{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form action="{{ url_for('admin.drop') }}" method="post">
+        <label for="pin">PIN</label>
+        <input type="password" name="pin" id="name" required>
+        <input type="submit" value="DROP ALL TABLES">
+    </form>
+{% endblock %}
