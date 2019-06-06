@@ -16,11 +16,10 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        table = request.form['table']
         db = get_db()
         error = None
         admin = db.execute(
-            'SELECT * FROM {} WHERE username = ?'.format(table), (username,)
+            'SELECT * FROM admins WHERE username = ?', (username,)
         ).fetchone()
     
         if admin is None:
