@@ -114,6 +114,7 @@ def load_logged_in_user():
 			payload = jwt.decode(authToken, current_app.config.get('SECRET_KEY'))
 		except (jwt.exceptions.ExpiredSignatureError,jwt.exceptions.InvalidTokenError):
 			g.user = None
+			g.role = None
 		else:
 			g.user = get_db().execute(
 				'SELECT * FROM {} WHERE username = ?'.format(payload['role']), (payload['sub'],)
@@ -121,6 +122,7 @@ def load_logged_in_user():
 			g.role = payload['role']
 	else:
 		g.user = None
+		g.role = None
 
 
 @bp.route('/logout')

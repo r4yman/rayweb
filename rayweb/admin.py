@@ -6,7 +6,7 @@ from flask import (
 
 from werkzeug.security import check_password_hash
 from rayweb.db import get_db
-from rayweb.auth import create_token, admin_required
+from rayweb.auth import create_token, login_required, admin_required
 
 bp = Blueprint('admin',__name__, url_prefix='/admin')
 
