@@ -6,7 +6,7 @@
 	<ul>
 		{% if g.user %}
 			<li><span>{{ g.user['username'] }}</span>
-			{% if g.user['role'] == 'user' %}
+			{% if g.role == 'user' %}
 				<li><a href="{{ url_for('blog.profile', id=g.user['id']) }}">Profile</a>
 			{% endif %}
 			<li><a href="{{ url_for('auth.logout') }}">Log Out</a>
