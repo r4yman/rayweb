@@ -1,4 +1,5 @@
 FROM python:latest
+RUN mkdir /instance
 WORKDIR /rayweb
 COPY . /rayweb
 RUN mkdir /configs
