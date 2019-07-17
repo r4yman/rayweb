@@ -27,5 +27,5 @@ The `prod/config.py` file could look like this:
 
 ```python
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
-DATABASE = 'rayweb.sqlite'
+DATABASE = 'mysql://127.0.0.1:3306'
 ```

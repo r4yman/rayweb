@@ -1,8 +1,8 @@
 FROM python:latest
-RUN mkdir /instance
+RUN mkdir -p /instance
 WORKDIR /rayweb
 COPY . /rayweb
-RUN mkdir /configs
+RUN mkdir -p /configs
 COPY ./config.py /configs/config.py
 RUN pip install flup
 RUN pip install pyjwt
