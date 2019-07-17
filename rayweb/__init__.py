@@ -31,9 +31,9 @@ def create_app(test_config=None):
 
 	# a secret :)
 	if app.config.get('TESTING'):
-	@app.route('/topsecret')
-	def secret():
-		return send_from_directory('static','frog.gif', mimetype='image/gif')
+		@app.route('/topsecret')
+		def secret():
+			return send_from_directory('static','frog.gif', mimetype='image/gif')
 
 	from . import db
 	db.init_app(app)
