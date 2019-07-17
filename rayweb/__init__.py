@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, send_file
+from flask import Flask, send_from_directory, url_for
 
 
 def create_app(test_config=None):
@@ -31,9 +31,9 @@ def create_app(test_config=None):
 
 	# a secret :)
 	if app.config.get('TESTING'):
-		@app.route('/topsecret')
-		def secret():
-			return send_file("frog.gif", mimetype='image/gif')
+	@app.route('/topsecret')
+	def secret():
+		return send_from_directory('static','frog.gif', mimetype='image/gif')
 
 	from . import db
 	db.init_app(app)

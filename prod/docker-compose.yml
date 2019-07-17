@@ -2,14 +2,14 @@ version: "3.7"
 
 services:
         web:
-                image: nginx:latest
+                image: alpine:latest
                 build:
                         context: ./web
                 ports:
                         - "80:80"
                         - "443:443"
                 volumes:
-                        - ./site.conf:/etc/nginx/nginx.conf
+                        - ./web/site.conf:/etc/nginx/nginx.conf
                 networks:
                         - webapp
                 depends_on:
