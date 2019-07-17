@@ -29,3 +29,7 @@ The `prod/config.py` file could look like this:
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
 DATABASE = 'mysql://127.0.0.1:3306'
 ```
+## SSL/TLS Encryption
+
+Automatically generates a Certificate every time a docker container is created and serves the content over HTTPS and HTTP.
+

@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, send_file
 
 
 def create_app(test_config=None):
@@ -28,6 +28,12 @@ def create_app(test_config=None):
 		@app.route('/test')
 		def hello():
 			return 'Hello, World!'
+
+	# a secret :)
+	if app.config.get('TESTING'):
+		@app.route('/topsecret')
+		def secret():
+			return send_file("frog.gif", mimetype='image/gif')
 
 	from . import db
 	db.init_app(app)

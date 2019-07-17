@@ -3,8 +3,11 @@ version: "3.7"
 services:
         web:
                 image: nginx:latest
+                build:
+                        context: ./web
                 ports:
                         - "80:80"
+                        - "443:443"
                 volumes:
                         - ./site.conf:/etc/nginx/nginx.conf
                 networks:
@@ -15,10 +18,10 @@ services:
         python:
                 tty: true
                 volumes:
-                        - ./:/rayweb
+                        - ./python:/rayweb
                 image: python:latest
                 build:
-                        context: .
+                        context: ./python
                 networks:
                         - webapp
 
