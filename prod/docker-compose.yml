@@ -8,6 +8,9 @@ services:
                 ports:
                         - "80:80"
                         - "443:443"
+                        - "8000:8000"
+                        - "9001:9001"
+                        - "9002:9002"
                 volumes:
                         - ./web/site.conf:/etc/nginx/nginx.conf
                 networks:

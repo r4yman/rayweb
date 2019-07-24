@@ -27,9 +27,18 @@ The `prod/config.py` file could look like this:
 
 ```python
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
+ORIGINS = ['https://github.com','http://localhost:8080']
 DATABASE = 'mysql://127.0.0.1:3306'
 ```
 ## SSL/TLS Encryption
 
 Automatically generates a Certificate every time a docker container is created and serves the content over HTTPS and HTTP.
+
+## Cross Origin Resource Sharing
+
+You can put your machines IP address into the `ORIGINS` variable in the `prod/config.py` file together with port 8000 to be able to use the there hosted SOP and CORS demos.
+
+```python
+ORIGINS = ['http://machinesIP:8000']
+```
 

@@ -1,14 +1,18 @@
 import os
 
-from flask import Flask, send_from_directory, url_for
+from flask import Flask, send_from_directory, url_for, current_app
+from flask_cors import CORS
 
 
 def create_app(test_config=None):
 	app = Flask('rayweb', instance_path="/instance", instance_relative_config=True)
 	app.config.from_mapping(
 		SECRET_KEY='dev',
+		ORIGINS=['http://192.168.99.101:8000',],
 		DATABASE=os.path.join(app.instance_path,'rayweb.sqlite'),
 	)
+	# the resource path is not dynamic
+	CORS(app,resources='/create',origins=app.config.get("ORIGINS"),supports_credentials=True)
 
 	if test_config is None:
 		# load the instance config, if it exists, when not testing
