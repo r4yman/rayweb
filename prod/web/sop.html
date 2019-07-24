@@ -15,6 +15,7 @@
 			function create(){
 				var xmlhttp;
 				xmlhttp = new XMLHttpRequest();
+				xmlhttp.withCredentials = true;
 				xmlhttp.open("POST","http://192.168.99.101/create");
 				data = new FormData();
 				data.set("title","Hello World!");
@@ -34,7 +35,7 @@
 		<!--<p><a href="http://192.168.99.101/1/delete">simple XRSF</a></p>-->
 		<img src="http://192.168.99.101/topsecret" onload="draw()" alt="a GIF" id="frog">
 		<button onclick="request()">Delete Hello World</button>
-		<button onlick="create()">Post Hello World</button>
-		<canvas id="can" width="1280" height="720"></canvas>
+		<button onclick="create()">Post Hello World</button>
+		<canvas id="can"></canvas>
 	</body>
 </html>
