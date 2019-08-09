@@ -1,11 +1,13 @@
 DROP TABLE IF EXISTS user;
 DROP TABLE IF EXISTS admins;
 DROP TABLE IF EXISTS post;
+DROP TABLE IF EXISTS server_variables;
 
 CREATE TABLE user (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	username TEXT UNIQUE NOT NULL,
 	password TEXT NOT NULL,
+	tokenid TEXT,
 	token TEXT
 );
 
@@ -13,6 +15,7 @@ CREATE TABLE admins (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	username TEXT UNIQUE NOT NULL,
 	password TEXT NOT NULL,
+	tokenid TEXT,
 	token TEXT
 );
 
@@ -25,6 +28,12 @@ CREATE TABLE post (
 	FOREIGN KEY (author_id) REFERENCES user (id)
 );
 
+CREATE TABLE server_variables (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	variable TEXT NOT NULL,
+	value TEXT NOT NULL
+);
+
 INSERT INTO admins (username, password) VALUES (
 	'admin', 'pbkdf2:sha256:150000$GKr6WUfi$2db1a7e3fa645138a106039a22f363c5525e37aa85022bc3753d02051fe8d8a6'
-)
+);

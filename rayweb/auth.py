@@ -1,4 +1,5 @@
 import functools
+import hashlib
 import datetime
 import jwt
 
@@ -11,12 +12,29 @@ from rayweb.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-def create_token(sub,role,key):
+def create_id(db):
+	seed = db.execute(
+		'SELECT * FROM server_variables WHERE id = 1'
+	).fetchone()
+	counter = db.execute(
+		'SELECT * FROM server_variables WHERE id = 2'
+	).fetchone()
+	counter = int(counter['value'])
+
+	gen = hashlib.sha256(bytes(counter)+seed['value']).hexdigest()
+	counter += 1
+	db.execute('UPDATE server_variables SET value = ? WHERE id = 2',(str(counter),))
+	db.commit()
+
+	return gen
+
+def create_token(sub,role,id,key):
 	payload = {
 		'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, minutes=5),
 		'iat': datetime.datetime.utcnow(),
 		'sub': sub,
-		'role': role
+		'role': role,
+		'jti' : id
 	}
 
 	token = jwt.encode(
@@ -96,7 +114,10 @@ def login():
 			return response
 
 		if error is None:
-			token = create_token(user['username'],'user',current_app.config.get('SECRET_KEY'))
+			eth = create_id(db)
+			token = create_token(user['username'],'user',eth,current_app.config.get('SECRET_KEY'))
+			db.execute('UPDATE user SET tokenid = ? WHERE username = ?',(eth,user['username']))
+			db.commit()
 			response = make_response(redirect(url_for('index')))
 			response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
 			return response
@@ -116,21 +137,53 @@ def load_logged_in_user():
 			g.user = None
 			g.role = None
 		else:
-			g.user = get_db().execute(
-				'SELECT * FROM {} WHERE username = ?'.format(payload['role']), (payload['sub'],)
-			).fetchone()
-			g.role = payload['role']
+			user = get_db().execute('SELECT * FROM {} WHERE username = ?'.format(payload['role']), (payload['sub'],)).fetchone()
+			if user is not None:
+				if 'tokenid' in user.keys():
+					if user['tokenid'] == payload['jti']:
+						g.user = user
+						g.role = payload['role']
+					else:
+						g.user = None
+						g.role = None
+				else:
+					g.user = None
+					g.role = None
+			else:
+				g.user = None
+				g.role = None
 	else:
 		g.user = None
 		g.role = None
 
+@bp.after_app_request
+def issue_token(response):
+	db = get_db()
+	if g.user is not None:
+		eth = create_id(db)
+		token = create_token(g.user['username'],g.role,eth,current_app.config.get('SECRET_KEY'))
+		db.execute('UPDATE {} SET tokenid = ? WHERE username = ?'.format(g.role),(eth,g.user['username']))
+		db.commit()
+		response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
+		return response
+	else:
+		return response
+
 
 @bp.route('/logout')
 def logout():
+	db = get_db()
+	eth = create_id(db)
+	db.execute('UPDATE {} SET tokenid = ? WHERE username = ?'.format(g.role),(eth,g.user['username']))
+	db.commit()
+
 	exp = datetime.datetime.utcnow()
 	conv = exp.strftime('%a, %d %b %Y %H:%M:%S GMT')
 	response = make_response(redirect(url_for('index')))
 	response.headers['Set-Cookie'] = 'token=expired; path=/; expires=' + conv
+
+	g.user = None
+	g.role = None
 	return response
 
 

@@ -54,8 +54,8 @@ def drop():
             DROP TABLE IF EXISTS user;
             DROP TABLE IF EXISTS admins;
             DROP TABLE IF EXISTS post;
-            '''
-            
+            DROP TABLE IF EXISTS server_variables;
+            '''  
         )
         db.commit()
     return render_template('admin/control.html')

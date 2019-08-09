@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 import click
 from flask import current_app, g
@@ -25,6 +26,9 @@ def init_db():
 
 	with current_app.open_resource('schema.sql') as f:
 		db.executescript(f.read().decode('utf8'))
+	db.execute('INSERT INTO server_variables (variable,value) VALUES (?, ?)',('urandom',os.urandom(160)))
+	db.execute('INSERT INTO server_variables (variable,value) VALUES (?, ?)',('counter',1))
+	db.commit()
 
 @click.command('init-db')
 @with_appcontext
