@@ -50,10 +50,7 @@ def register():
 	if request.method == 'POST':
 		username = request.form['username']
 		password = request.form['password']
-		if 'persistent' in request.form.keys():
-			persistent = True
-		else:
-			persistent = False
+		
 		db = get_db()
 		error = None
 
@@ -67,23 +64,10 @@ def register():
 			error = 'User {} is already registered.'.format(username)
 
 		if error is None:
-			if persistent:
-				payload = {
-					'iat': datetime.datetime.utcnow(),
-					'sub': username,
-					'role': 'user'
-				}
-
-				token  = jwt.encode(payload,current_app.config.get('SECRET_KEY'),algorithm='HS256')
-				db.execute(
-					'INSERT INTO user (username, password, token) VALUES (?, ?, ?)',
-					(username, generate_password_hash(password), token)
-				)
-			else:
-				db.execute(
-					'INSERT INTO user (username, password) VALUES (?, ?)',
-					(username, generate_password_hash(password))
-				)
+			db.execute(
+				'INSERT INTO user (username, password) VALUES (?, ?)',
+				(username, generate_password_hash(password))
+			)
 			db.commit()
 			return redirect(url_for('auth.login'))
 
@@ -107,11 +91,6 @@ def login():
 			error = 'Incorrect username.'
 		elif not check_password_hash(user['password'], password):
 			error = 'Incorrect password.'
-		elif user['token'] is not None:
-			token = user['token'].decode()
-			response = make_response(redirect(url_for('index')))
-			response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
-			return response
 
 		if error is None:
 			eth = create_id(db)
