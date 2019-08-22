@@ -21,7 +21,6 @@ pycparser==2.19
 PyJWT==1.7.1
 pymongo==3.9.0
 pytest==4.5.0
--e git+git@github.com:r4yman/rayweb@faa27f8b0fca630aa3b577cb030a01eac1af78de#egg=rayweb
 six==1.12.0
 wcwidth==0.1.7
 Werkzeug==0.15.4
