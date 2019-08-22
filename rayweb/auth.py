@@ -2,29 +2,24 @@ import functools
 import hashlib
 import datetime
 import jwt
+import uuid
 
 from flask import (
 	Blueprint, flash, g, redirect, render_template, request, url_for, make_response, current_app
 )
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from rayweb.db import get_db
+from werkzeug.security import check_password_hash, generate_password_hash
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-def create_id(db):
-	seed = db.execute(
-		'SELECT * FROM server_variables WHERE id = 1'
-	).fetchone()
-	counter = db.execute(
-		'SELECT * FROM server_variables WHERE id = 2'
-	).fetchone()
-	counter = int(counter['value'])
+def create_id(mongo):
+	seed = mongo.db.systemvariables.find_one({'variable':'urandom'},{'value':1})
+	counter = mongo.db.systemvariables.find_one({'variable':'counter'},{'value':1})
+	counter = counter['value']
 
 	gen = hashlib.sha256(bytes(counter)+seed['value']).hexdigest()
 	counter += 1
-	db.execute('UPDATE server_variables SET value = ? WHERE id = 2',(str(counter),))
-	db.commit()
+	mongo.db.systemvariables.update_one({'variable':'counter'},{'$set':{'value':counter}})
 
 	return gen
 
@@ -51,24 +46,19 @@ def register():
 		username = request.form['username']
 		password = request.form['password']
 		
-		db = get_db()
+		mongo = get_db()
 		error = None
 
 		if not username:
 			error = 'Username is required.'
 		elif not password:
 			error = 'Password is required.'
-		elif db.execute(
-			'SELECT id FROM user WHERE username = ?', (username,)
-		).fetchone() is not None:
+		elif mongo.db.user.find_one({'username':username},{'id':1}) is not None:
 			error = 'User {} is already registered.'.format(username)
 
 		if error is None:
-			db.execute(
-				'INSERT INTO user (username, password) VALUES (?, ?)',
-				(username, generate_password_hash(password))
-			)
-			db.commit()
+			#TODO: think about how to generate a guessable id for user (Access Controls)
+			mongo.db.user.insert({'id':uuid.uuid4().hex,'username':username,'password':generate_password_hash(password)})
 			return redirect(url_for('auth.login'))
 
 		flash(error)
@@ -81,11 +71,9 @@ def login():
 	if request.method == 'POST':
 		username = request.form['username']
 		password = request.form['password']
-		db = get_db()
+		mongo = get_db()
 		error = None
-		user = db.execute(
-			'SELECT * FROM user WHERE username = ?', (username,)
-		).fetchone()
+		user = mongo.db.user.find_one({'username':username})
 
 		if user is None:
 			error = 'Incorrect username.'
@@ -93,10 +81,9 @@ def login():
 			error = 'Incorrect password.'
 
 		if error is None:
-			eth = create_id(db)
+			eth = create_id(mongo)
 			token = create_token(user['username'],'user',eth,current_app.config.get('SECRET_KEY'))
-			db.execute('UPDATE user SET tokenid = ? WHERE username = ?',(eth,user['username']))
-			db.commit()
+			mongo.db.user.update_one({'username':username},{'$set':{'tokenid':eth}})
 			response = make_response(redirect(url_for('index')))
 			response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
 			return response
@@ -116,7 +103,8 @@ def load_logged_in_user():
 			g.user = None
 			g.role = None
 		else:
-			user = get_db().execute('SELECT * FROM {} WHERE username = ?'.format(payload['role']), (payload['sub'],)).fetchone()
+			mongo = get_db()
+			user = mongo.db.user.find_one({'username':payload['sub']})
 			if user is not None:
 				if 'tokenid' in user.keys():
 					if user['tokenid'] == payload['jti']:
@@ -129,20 +117,27 @@ def load_logged_in_user():
 					g.user = None
 					g.role = None
 			else:
-				g.user = None
-				g.role = None
+				admin = mongo.db.admins.find_one({'username':payload['sub']})
+				if admin is not None:
+					g.user = admin
+					g.role = payload['role']
+				else:
+					g.user = None
+					g.role = None
 	else:
 		g.user = None
 		g.role = None
 
 @bp.after_app_request
 def issue_token(response):
-	db = get_db()
+	mongo = get_db()
 	if g.user is not None:
-		eth = create_id(db)
+		eth = create_id(mongo)
 		token = create_token(g.user['username'],g.role,eth,current_app.config.get('SECRET_KEY'))
-		db.execute('UPDATE {} SET tokenid = ? WHERE username = ?'.format(g.role),(eth,g.user['username']))
-		db.commit()
+		if g.role == 'admins':
+			mongo.db.admins.update_one({'username':g.user['username']},{'$set':{'tokenid':eth}})
+		else:
+			mongo.db.user.update_one({'username':g.user['username']},{'$set':{'tokenid':eth}})
 		response.headers['Set-Cookie'] = 'token=' + token + '; path=/'
 		return response
 	else:
@@ -151,10 +146,12 @@ def issue_token(response):
 
 @bp.route('/logout')
 def logout():
-	db = get_db()
-	eth = create_id(db)
-	db.execute('UPDATE {} SET tokenid = ? WHERE username = ?'.format(g.role),(eth,g.user['username']))
-	db.commit()
+	mongo = get_db()
+	eth = create_id(mongo)
+	if g.role == 'admins':
+		mongo.db.admins.update_one({'username':g.user['username']},{'$set':{'tokenid':eth}})
+	else:
+		mongo.db.user.update_one({'username':g.user['username']},{'$set':{'tokenid':eth}})
 
 	exp = datetime.datetime.utcnow()
 	conv = exp.strftime('%a, %d %b %Y %H:%M:%S GMT')

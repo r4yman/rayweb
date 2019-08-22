@@ -1,42 +1,36 @@
-import sqlite3
 import os
-
 import click
+
 from flask import current_app, g
 from flask.cli import with_appcontext
+from flask_pymongo import PyMongo
 
 def get_db():
-	if 'db' not in g:
-		g.db = sqlite3.connect(
-			current_app.config['DATABASE'],
-			detect_types = sqlite3.PARSE_DECLTYPES
-		)
-		g.db.row_factory = sqlite3.Row
-
-	return g.db
+	if 'mongo' not in g:
+		g.mongo = PyMongo(current_app)
+	return g.mongo
 
 def close_db(e=None):
-	db = g.pop('db', None)
-
-	if db is not None:
-		db.close()
+	mongo = g.pop('mongo',None)
+	if mongo is not None:
+		mongo.db.client.close()
 
 def init_db():
-	db = get_db()
+	mongo = get_db()
 
-	with current_app.open_resource('schema.sql') as f:
-		db.executescript(f.read().decode('utf8'))
-	db.execute('INSERT INTO server_variables (variable,value) VALUES (?, ?)',('urandom',os.urandom(160)))
-	db.execute('INSERT INTO server_variables (variable,value) VALUES (?, ?)',('counter',1))
-	db.commit()
+	if mongo.db.systemvariables.find_one() is None:
+		mongo.db.systemvariables.insert_many([{"variable":"urandom","value":os.urandom(160)},{"variable":"counter","value":1}])
+	if mongo.db.admins.find_one() is None:
+		mongo.db.admins.insert_one({"username":"admin","password":"pbkdf2:sha256:150000$GKr6WUfi$2db1a7e3fa645138a106039a22f363c5525e37aa85022bc3753d02051fe8d8a6"})
 
-@click.command('init-db')
+@click.command('reset-db')
 @with_appcontext
-def init_db_command():
-	init_db()
-	click.echo('Initialized the database.')
+def reset_db_command():
+	mongo = get_db()
 
+	mongo.db.client.drop_database(mongo.db.client.get_default_database())
+	init_db()
 
 def init_app(app):
 	app.teardown_appcontext(close_db)
-	app.cli.add_command(init_db_command)
+	app.cli.add_command(reset_db_command)

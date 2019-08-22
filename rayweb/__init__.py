@@ -5,11 +5,11 @@ from flask_cors import CORS
 
 
 def create_app(test_config=None):
-	app = Flask('rayweb', instance_path="/instance", instance_relative_config=True)
+	app = Flask('rayweb', instance_relative_config=True)
 	app.config.from_mapping(
 		SECRET_KEY='dev',
 		ORIGINS=['http://192.168.99.101:8000',],
-		DATABASE=os.path.join(app.instance_path,'rayweb.sqlite'),
+		MONGO_URI = 'mongodb://localhost:27017/rayweb',
 	)
 	# the resource path is not dynamic
 	CORS(app,resources='/create',origins=app.config.get("ORIGINS"),supports_credentials=True)

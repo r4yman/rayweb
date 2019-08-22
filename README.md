@@ -17,7 +17,7 @@ docker-compose up
 ```
 does the trick.
 
-This will create 2 docker container each time you run it, one running nginx as reverse-proxy and the other running this app as a FCGI Server.
+This will create 3 docker container each time you run it, one running nginx as reverse-proxy, one hosting the MongoDB and the last running this app as a FCGI Server.
 
 ## Configuration
 
@@ -28,7 +28,7 @@ The `prod/config.py` file could look like this:
 ```python
 SECRET_KEY = b'_5#y2L"F4Q8z\n\xec]/'
 ORIGINS = ['https://github.com','http://localhost:8080']
-DATABASE = 'mysql://127.0.0.1:3306'
+MONGO_URI = 'mongodb://localhost:27017/rayweb'
 ```
 ## SSL/TLS Encryption
 

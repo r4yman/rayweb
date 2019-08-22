@@ -1,12 +1,9 @@
 FROM python:latest
-RUN mkdir -p /instance
 WORKDIR /rayweb
 COPY . /rayweb
 RUN mkdir -p /configs
 COPY ./config.py /configs/config.py
-RUN pip install flup
-RUN pip install pyjwt
-RUN pip install flask-cors
-RUN pip install rayweb-1.0.0-py3-none-any.whl
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 ENV FlASK_APP rayweb
 CMD ["python", "rayweb.fcgi"]

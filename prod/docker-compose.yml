@@ -17,6 +17,13 @@ services:
                         - webapp
                 depends_on:
                         - python
+        
+        db:
+                image: mongo:latest
+                build:
+                        context: ./db
+                networks:
+                        - webapp
 
         python:
                 tty: true
@@ -27,6 +34,8 @@ services:
                         context: ./python
                 networks:
                         - webapp
+                depends_on:
+                        - db
 
 networks:
         webapp:

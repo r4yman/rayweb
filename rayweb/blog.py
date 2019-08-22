@@ -1,3 +1,6 @@
+import datetime
+import uuid
+
 from flask import (
 	Blueprint, flash, g, redirect, render_template, request, url_for
 )
@@ -11,23 +14,17 @@ bp = Blueprint('blog',__name__)
 
 @bp.route('/')
 def index():
-	db = get_db()
-	posts = db.execute(
-		'SELECT p.id, title, body, created, author_id, username'
-		' FROM post p JOIN user u ON p.author_id = u.id'
-		' ORDER BY created DESC'
-	).fetchall()
+	mongo = get_db()
+	posts = mongo.db.post.find({},{'id':1,'title':1,'body':1,'created':1,'username':1,'_id':0}).sort('created',-1)
 	return render_template('blog/index.html', posts=posts)
 
-@bp.route('/profile/<int:id>', methods=('GET',))
+#TODO: think about how to generate a guessable id for user (Access Controls)
+@bp.route('/profile/<id>', methods=('GET',))
 @login_required
 def profile(id):
-	db = get_db()
-	user = db.execute(
-		'SELECT * FROM user WHERE id = ?', (id,)
-	).fetchone()
-	entity = dict(user)
-	return render_template('blog/profile.html', entity=entity)
+	mongo = get_db()
+	user = mongo.db.user.find_one({'id':id})
+	return render_template('blog/profile.html', entity=user)
 
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -44,35 +41,26 @@ def create():
 		if error is not None:
 			flash(error)
 		else:
-			db = get_db()
-			db.execute(
-				'INSERT INTO post (title, body, author_id)'
-				' VALUES (?, ?, ?)',
-				(title, body, g.user['id'])
-			)
-			db.commit()
+			mongo = get_db()
+			mongo.db.post.insert({'id':uuid.uuid4().hex,'title':title,'body':body,'created':datetime.datetime.utcnow(),'username':g.user['username']})
 			return redirect(url_for('blog.index'))
 
 	return render_template('blog/create.html')
 
 
 def get_post(id, check_author=True):
-	post = get_db().execute(
-		'SELECT p.id, title, body, created, author_id, username'
-		' FROM post p JOIN user u ON p.author_id = u.id'
-		' WHERE p.id = ?',
-		(id,)
-	).fetchone()
+	mongo = get_db()
+	post = mongo.db.post.find_one({'id':id},{'id':1,'title':1,'body':1,'created':1,'username':1,'_id':0})
 
 	if post is None:
 		abort(404, "Post id {0} doesn't exist.".format(id))
 
-	if check_author and post['author_id'] != g.user['id']:
+	if check_author and post['username'] != g.user['username']:
 		abort(403)
 
 	return post
 
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))
+@bp.route('/update/<id>', methods=('GET', 'POST'))
 @login_required
 def update(id):
 	post = get_post(id)
@@ -88,23 +76,17 @@ def update(id):
 		if error is not None:
 			flash(error)
 		else:
-			db = get_db()
-			db.execute(
-				'UPDATE post SET title = ?, body = ?'
-				' WHERE id = ?',
-				(title, body, id)
-			)
-			db.commit()
+			mongo = get_db()
+			mongo.db.post.update_one({'id':id},{'$set':{'title':title,'body':body}})
 			return redirect(url_for('blog.index'))
 
 	return render_template('blog/update.html', post=post)
 
 
-@bp.route('/<int:id>/delete', methods=('GET','POST'))
+@bp.route('/delete/<id>', methods=('GET','POST'))
 @login_required
 def delete(id):
 	get_post(id)
-	db = get_db()
-	db.execute('DELETE FROM post WHERE id = ?',(id,))
-	db.commit()
+	mongo = get_db()
+	mongo.db.post.remove({'id':id})
 	return redirect(url_for('blog.index'))
